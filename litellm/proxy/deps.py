@@ -3,6 +3,7 @@ from typing import Annotated, Final, TypeAlias
 from fastapi import Depends, Request
 
 from litellm.repositories.database import Database
+from litellm.repositories.deployment_warning_ignore_repository import DeploymentWarningIgnoreRepository
 from litellm.repositories.user_banner_repository import UserBannerRepository
 
 _MISSING_DATABASE: Final = object()
@@ -28,3 +29,12 @@ async def get_user_banner_repository(database: DatabaseDep) -> UserBannerReposit
 
 
 UserBannerRepositoryDep: TypeAlias = Annotated[UserBannerRepository | None, Depends(get_user_banner_repository)]
+
+
+async def get_deployment_warning_ignore_repository(database: DatabaseDep) -> DeploymentWarningIgnoreRepository | None:
+    return None if database is None else DeploymentWarningIgnoreRepository(database.prisma, use_writer=True)
+
+
+DeploymentWarningIgnoreRepositoryDep: TypeAlias = Annotated[
+    DeploymentWarningIgnoreRepository | None, Depends(get_deployment_warning_ignore_repository)
+]

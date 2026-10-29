@@ -13,6 +13,7 @@ from litellm._logging import verbose_logger, verbose_proxy_logger
 from litellm.constants import LITELLM_PROXY_ADMIN_NAME
 from litellm.proxy._types import AUDIT_ACTIONS, LitellmTableNames, LitellmUserRoles, UserAPIKeyAuth
 from litellm.proxy.auth.user_api_key_auth import user_api_key_auth
+from litellm.proxy.deps import get_deployment_warning_ignore_repository
 from litellm.proxy.health_endpoints._health_endpoints import (
     DISABLE_NO_REDIS_WARNING_ENV_VAR,
     env_credential_login_enabled,
@@ -22,7 +23,6 @@ from litellm.proxy.health_endpoints._health_endpoints import (
 )
 from litellm.repositories.deployment_warning_ignore_repository import (
     DEPLOYMENT_WARNING_IGNORES_ROW_ID,
-    DeploymentWarningIgnoreRepository,
 )
 from litellm.types.llms.base import LiteLLMBaseModel
 
@@ -225,14 +225,6 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def deployment_warning_ignore_store() -> DeploymentWarningIgnoreStore | None:
-    from litellm.proxy.proxy_server import prisma_client
-
-    if prisma_client is None:
-        return None
-    return DeploymentWarningIgnoreRepository(prisma_client, use_writer=True)
-
-
 def config_audit_logger() -> ConfigAuditLogger:
     from litellm.proxy.proxy_server import create_config_audit_log
 
@@ -281,7 +273,7 @@ async def current_warning_conditions(now: Annotated[datetime, Depends(utc_now)])
 async def get_deployment_warnings(
     _: Annotated[UserAPIKeyAuth, Depends(_deployment_warning_reader)],
     conditions: Annotated[tuple[WarningCondition, ...], Depends(current_warning_conditions)],
-    store: Annotated[DeploymentWarningIgnoreStore | None, Depends(deployment_warning_ignore_store)],
+    store: Annotated[DeploymentWarningIgnoreStore | None, Depends(get_deployment_warning_ignore_repository)],
     now: Annotated[datetime, Depends(utc_now)],
 ) -> DeploymentWarningsResponse:
     """
@@ -309,7 +301,7 @@ async def update_deployment_warning_ignore(
     warning_id: str,
     update: DeploymentWarningIgnoreUpdate,
     user_api_key_dict: Annotated[UserAPIKeyAuth, Depends(_deployment_warning_admin)],
-    store: Annotated[DeploymentWarningIgnoreStore | None, Depends(deployment_warning_ignore_store)],
+    store: Annotated[DeploymentWarningIgnoreStore | None, Depends(get_deployment_warning_ignore_repository)],
     audit_logger: Annotated[ConfigAuditLogger, Depends(config_audit_logger)],
     now: Annotated[datetime, Depends(utc_now)],
 ) -> DeploymentWarningIgnoreResponse:
