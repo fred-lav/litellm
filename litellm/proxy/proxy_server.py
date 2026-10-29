@@ -1481,7 +1481,7 @@ def _own_database(resources: AsyncExitStack, client: PrismaClient | None) -> dat
 
 
 def _forget_prisma_client() -> None:
-    global prisma_client  # noqa: PLW0603  # routes still read this global until they move to DatabaseDependency
+    global prisma_client  # noqa: PLW0603  # routes still read this global until they move to DatabaseDep
     prisma_client = None  # rebind-ok: a closed client must not survive into the next lifespan entry
 
 
